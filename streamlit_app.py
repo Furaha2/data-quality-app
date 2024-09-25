@@ -28,12 +28,9 @@ try:
 except Exception as e:
     print('Upload CSV file')
 
-def read_file(file_name):
-    try:
-        df = pd.read_csv(file_name)
-        return df
-    except Exception as e:
-        return e
+# to do:
+# for excel files provide a way to skip rows and pick files
+# provide a way to compare between files for consistency and accuracy
 
 # evaluation metrics from dimensions
 # 1. Uniqueness
@@ -44,9 +41,11 @@ def row_uniqueness_score():
         # rows duplicates
         dups = df.duplicated().sum()
         un_score = 100 - ((dups / id_range) * 100)
-        return "Row uniqueness score is: {}%".format(round(un_score, 2))
+        description = "Row uniqueness score"
+        # return "Row uniqueness score is: {}%".format(round(un_score, 2))
+        return description, round(un_score, 2)
     except Exception:
-        print('Upload CSV file')
+        return '', ''
 
 # checks duplicated columns
 def col_uniq_score():
@@ -55,9 +54,11 @@ def col_uniq_score():
         cols = [col for col in df.columns]
         col_dups = [col for col in cols if cols.count(col) > 1]
         col_dups_score = 100 - (len(col_dups) / len(df.columns) * 100)
-        return "Column uniqueness score is: {}%".format(col_dups_score)
-    except Exception as e:
-        return ''
+        description = "Column uniqueness score"
+        # return "Column uniqueness score is: {}%".format(col_dups_score)
+        return description, col_dups_score
+    except Exception:
+        return '', ''
     
 # 2. Completeness Dimension
 # computes the number of complete rows
@@ -71,9 +72,11 @@ def completeness_row():
             if not df.loc[idx:idx].isnull().sum().any():
                 count += 1
         score_ = round(100 * (count/id_range), 2)
-        return "Row completeness score: {}%".format(score_)
+        description = "Row completeness score"
+        # return "Row completeness score: {}%".format(score_)
+        return description, score_
     except Exception:
-        return ''
+        return '', ''
 
 # compute total cols completeness
 def completeness_cols():
@@ -81,9 +84,11 @@ def completeness_cols():
         # df = read_file(file_name)
         null_list = [col for col in df.columns if df[col].isnull().sum() == 0]
         score = 100 * len(null_list) / len(df.columns)
-        return "Column completeness score: {}%".format(score)      
+        description = "Column completeness score"
+        # return "Column completeness score: {}%".format(score)
+        return description, score
     except Exception:
-        return ''
+        return '', ''
 
 # computes completeness score of cells
 def is_complete_score_row():
@@ -97,9 +102,11 @@ def is_complete_score_row():
             cumulative_null_count = cumulative_null_count + indiv_score
         null_score = cumulative_null_count / (col_range * id_range)
         final_score = 100 - (null_score * 100)
-        return "Cells completion score: {}%".format(round(final_score, 2))
+        description = "Cells completion score"
+        # return "Cells completion score: {}%".format(round(final_score, 2))
+        return description, round(final_score, 2)
     except Exception:
-        return ''
+        return '', ''
 
 # 3. Validity Dimension checks
 # check if data type is date, check is not > today
@@ -115,12 +122,15 @@ def valid_date():
             # check whether there is a value greater than today
             # compute number of invalid dates
         count_inv = len(invalid_dates)
-        return "Invalid dates count: {}".format(count_inv)
+        description = "Invalid dates count"
+        # return "Invalid dates count: {}".format(count_inv)
+        return description, count_inv
     except Exception:
-        return ''
+        return '', ''
 
 def validate_types():
     try:
+        description = "Data types validity score"
         orignal_types = list(df.dtypes)
         df2 = df.infer_objects()
         infered_types = list(df2.dtypes)
@@ -133,11 +143,14 @@ def validate_types():
                     diff_list.append(True)
                 # To do: compute the number of True
             valid_score = 100 - ((diff_list.count(False) / len(diff_list)) * 100)
-            return "Data types validity score: {}%".format(valid_score)
+            # return "Data types validity score: {}%".format(valid_score)
+            return description, valid_score
         else:
-            return "Data types validity score: 100%" #compute this value
+            valid_score = 100
+            # return "Data types validity score: 100%" #compute this value
+            return description, valid_score
     except Exception:
-        return ''
+        return '', ''
 
 # check class violations across columns
 # if column contains NaN then data classes will be 2
@@ -147,6 +160,7 @@ def validate_types():
 
 def check_class_violation():
     try:
+        default_score = 0
         classes_l = []
         for c in df.columns:
             if df[c].isnull().sum() > 0:
@@ -159,11 +173,15 @@ def check_class_violation():
                 if len(types_l) > 1:
                     classes_l.append(types_l)
         if len(classes_l) > 0:
-            return "Data class violations statistics:\n{}".format(classes_l)
+            description = "Data class violations statistics"
+            # return "Data class violations statistics:\n{}".format(classes_l)
+            return description, classes_l
         else:
-            return "Data class violation: 0" # format this to be metric per class
+            # return "Data class violation: 0" # format this to be metric per class
+            description = "Data class violation"
+            return description, default_score
     except Exception:
-        return ''
+        return '', ''
 
 # 4. Consistency checks
 # checks inconsistent capitalization
@@ -171,6 +189,7 @@ def check_class_violation():
 
 def check_caps():
     try:
+        description = "Consistent capitalization score"
         list_capitals = []
         str_cols = set()
 
@@ -184,9 +203,10 @@ def check_caps():
                         list_capitals.append(True)
         count_vals = df[list(str_cols)].count().sum() # counts number of values in subset dataframe
         score_caps = round(100 * (len(list_capitals) / count_vals), 2)
-        return "Consistent capitalization score: {}%".format(score_caps)
+        # return "Consistent capitalization score: {}%".format(score_caps)
+        return description, score_caps
     except Exception:
-        return ''
+        return '', ''
 
 # checking various representation of missing values
 # looking at: nan, none, and N/A
@@ -201,23 +221,39 @@ def check_null_representation():
                 count_none += len(df[df[c] == null_rep[0]])
                 count_na += len(df[df[c] == null_rep[1]])
                 count_nan += df[c].isnull().sum()
-        return "There are {} occurence of None, {} occurence of N/A and {} occurence of nan".format(count_none, count_na, count_nan)
+        # return "There are:\n {} occurence of None,\n {} occurence of N/A and\n {} occurence of nan".format(count_none, count_na, count_nan)
+        return count_none, count_na, count_nan
     except Exception:
-        return ''
+        return '', '', ''
 
 st.header('Dataset Quality Checks')
-# to do:
-# build a report for presenting score
-# report shown as Dimension name, metric name and score
-st.write(row_uniqueness_score())
-st.write(completeness_row())
-st.write(check_caps())
-st.write(col_uniq_score())
-st.write(check_class_violation())
-st.write(is_complete_score_row())
-st.write(completeness_cols())
-st.write(valid_date())
-st.write(validate_types())
-st.write(check_null_representation())
 
-# put functions in list, write loop to iterate over them
+# to do: 
+# comppute overall score and present it with a pie chart
+desc_1, score_1 =  row_uniqueness_score()
+desc_2, score_2 = completeness_row()
+desc_3, score_3 = completeness_cols()
+desc_4, score_4 = check_caps()
+desc_5, score_5 = col_uniq_score()
+desc_6, score_6 = check_class_violation()
+desc_7, score_7 = is_complete_score_row()
+desc_8, score_8 = valid_date()
+desc_9, score_9 = validate_types()
+count_none, count_na, count_nan = check_null_representation()
+
+data = {
+    'Data quality check': [desc_1, desc_2, desc_3, desc_4, desc_5,
+                           desc_6, desc_7, desc_8, desc_9, 'None occurence',
+                           'NA occurence', 'NaN occurence'],
+    'Score': [score_1, score_2, score_3, score_4, score_5,score_6, score_7,
+              score_8, score_9, count_none, count_na, count_nan]
+}
+
+df_scores = pd.DataFrame(data)
+
+if file_ is not None:
+    st.table(df_scores)
+
+# to do:
+# remove description as return value from functions and add it when creating df dictionary
+# round scores to 2 dec points
