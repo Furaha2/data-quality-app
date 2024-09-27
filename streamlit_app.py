@@ -241,18 +241,27 @@ desc_8, score_8 = valid_date()
 desc_9, score_9 = validate_types()
 count_none, count_na, count_nan = check_null_representation()
 
-data = {
-    'Data quality check': [desc_1, desc_2, desc_3, desc_4, desc_5,
+descriptions_list = [desc_1, desc_2, desc_3, desc_4, desc_5,
                            desc_6, desc_7, desc_8, desc_9, 'None occurence',
-                           'NA occurence', 'NaN occurence'],
-    'Score': [score_1, score_2, score_3, score_4, score_5,score_6, score_7,
+                           'NA occurence', 'NaN occurence']
+
+scores_ = [score_1, score_2, score_3, score_4, score_5,score_6, score_7,
               score_8, score_9, count_none, count_na, count_nan]
+
+# convert scores to str for better formatting
+scores_str_list = [str(score) for score in scores_]
+
+data = {
+    'Data quality check': descriptions_list,
+    'Score': scores_str_list
 }
 
+# print(score_1)
 df_scores = pd.DataFrame(data)
 
 if file_ is not None:
-    st.table(df_scores)
+    styled_df = df_scores.style.hide()
+    st.write(styled_df.to_html(), unsafe_allow_html=True)
 
 # to do:
 # remove description as return value from functions and add it when creating df dictionary
