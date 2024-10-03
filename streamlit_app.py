@@ -24,7 +24,7 @@ try:
     id_range = len(df.index)
     # columns = df.columns
     pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-    st_profile_report(pr, navbar=True)
+    # st_profile_report(pr, navbar=True)
 except Exception as e:
     print('Upload CSV file')
 
@@ -226,7 +226,6 @@ def check_null_representation():
     except Exception:
         return '', '', ''
 
-st.header('Dataset Quality Checks')
 
 # to do: 
 # comppute overall score and present it with a pie chart
@@ -259,10 +258,25 @@ data = {
 # print(score_1)
 df_scores = pd.DataFrame(data)
 
-if file_ is not None:
-    styled_df = df_scores.style.hide()
-    st.write(styled_df.to_html(), unsafe_allow_html=True)
+# if file_ is not None:
+#     styled_df = df_scores.style.hide()
+#     st.write(styled_df.to_html(), unsafe_allow_html=True)
 
 # to do:
-# remove description as return value from functions and add it when creating df dictionary
-# round scores to 2 dec points
+# persist overview page
+# use navbar with st.sidebar and
+# change the names of the pages
+# rename stremlit app to Home
+# do first char uppercase on other page names
+
+# define session state
+# "st.session_state object", st.session_state
+
+# check variable not in session_state
+if file_ is not None:
+    pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+    overview = st_profile_report(pr, navbar=True)
+    st.session_state['df_scores'] = df_scores
+    st.session_state['dt_overview'] = overview
+    st.session_state['pr'] = pr
+    st.write(st.session_state['dt_overview'])
