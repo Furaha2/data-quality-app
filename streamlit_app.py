@@ -6,27 +6,47 @@ from datetime import date
 from pathlib import Path
 
 st.title("Data Quality Assessment Tool")
-# st.write(
-#     "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
-# )
 
-file_ = st.file_uploader(label = 'Upload data file', type = ['csv']) # 'xls', 'xlsx'
+file_ = st.file_uploader(label = 'Upload data file', type = ['csv', 'xls', 'xlsx'])
 
-# read file 
-# generate profiling report
 try:
-    # file_extension = Path(file_).suffix
-    # if file_extension == '.csv':
-    #     df = pd.read_csv(file_)
-    # elif file_extension == '.xls' or file_extension == '.xlsx':
-    #     df = pd.read_excel(file_)
-    df = pd.read_csv(file_)
-    id_range = len(df.index)
-    # columns = df.columns
-    pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-    # st_profile_report(pr, navbar=True)
+    file_extension = Path(file_.name).suffix
+    if file_extension == '.csv':
+        df = pd.read_csv(file_)
+        id_range = len(df.index)
+        pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+        st_profile_report(pr, navbar=True)
+    elif file_extension in [".xls", ".xlsx"]:
+        df_temp = pd.ExcelFile(file_)
+        names_sheet = df_temp.sheet_names
+        n_sheets = len(names_sheet)
+        
+        # for a file with one sheet only
+        if n_sheets == 1:
+            rows_skipped_top = st.number_input("Skip top rows", step=1)
+            df = pd.read_excel(file_, skiprows=range(rows_skipped_top))
+            id_range = len(df.index)
+            gen_pr_btn = st.button("Generate data overview report")
+
+            if gen_pr_btn:
+                pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+                st_profile_report(pr, navbar=True)
+        elif n_sheets > 1:
+            name_of_sheet = st.selectbox("Pick sheet number", options=names_sheet)
+            rows_skipped_top = st.number_input("Skip top rows", step=1)
+            df = pd.read_excel(file_, sheet_name=name_of_sheet, skiprows=range(rows_skipped_top))
+            id_range = len(df.index)
+            gen_pr_btn = st.button("Generate data overview report")
+
+            if gen_pr_btn:
+                pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+                st_profile_report(pr, navbar=True)
+                # to do:
+                # refactor code to use function for this code and just call it
+    # to do:
+    # put disclaimer on cleaning data
 except Exception as e:
-    print('Upload CSV file')
+    print(e)
 
 # to do:
 # for excel files provide a way to skip rows and pick files
@@ -255,7 +275,7 @@ data = {
     'Score': scores_str_list
 }
 
-# print(score_1)
+# # print(score_1)
 df_scores = pd.DataFrame(data)
 
 # if file_ is not None:
@@ -266,7 +286,7 @@ df_scores = pd.DataFrame(data)
 # persist overview page
 # use navbar with st.sidebar and
 # change the names of the pages
-# rename stremlit app to Home
+# rename streamlit app to Home
 # do first char uppercase on other page names
 
 # define session state
@@ -275,8 +295,9 @@ df_scores = pd.DataFrame(data)
 # check variable not in session_state
 if file_ is not None:
     pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-    overview = st_profile_report(pr, navbar=True)
+    # overview = st_profile_report(pr, navbar=True)
     st.session_state['df_scores'] = df_scores
-    st.session_state['dt_overview'] = overview
+    # st.session_state['dt_overview'] = overview
     st.session_state['pr'] = pr
-    st.write(st.session_state['dt_overview'])
+    # st.write(st.session_state['dt_overview'])
+    st.session_state['file_name'] = file_.name
