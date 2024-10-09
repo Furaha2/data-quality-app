@@ -5,59 +5,61 @@ from streamlit_ydata_profiling import st_profile_report
 from datetime import date
 from pathlib import Path
 
+# function that sets web application menu
+def set_menu():
+    with st.sidebar:
+        st.page_link('streamlit_app.py', label='Home')
+        st.page_link('pages/data_check.py', label='Data Quality Scores')
+        st.page_link('pages/data_overview.py', label='Data Overview')
+        st.page_link('pages/framework.py', label='Open Data Quality Framework')
+
 st.title("Data Quality Assessment Tool")
 
 file_ = st.file_uploader(label = 'Upload data file', type = ['csv', 'xls', 'xlsx'])
 
-try:
-    file_extension = Path(file_.name).suffix
-    if file_extension == '.csv':
-        df = pd.read_csv(file_)
-        id_range = len(df.index)
-        pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-        st_profile_report(pr, navbar=True)
-    elif file_extension in [".xls", ".xlsx"]:
-        df_temp = pd.ExcelFile(file_)
-        names_sheet = df_temp.sheet_names
-        n_sheets = len(names_sheet)
-        
-        # for a file with one sheet only
-        if n_sheets == 1:
-            rows_skipped_top = st.number_input("Skip top rows", step=1)
-            df = pd.read_excel(file_, skiprows=range(rows_skipped_top))
+if file_ is not None:
+    try:
+        file_extension = Path(file_.name).suffix
+        if file_extension == '.csv':
+            df = pd.read_csv(file_)
             id_range = len(df.index)
-            gen_pr_btn = st.button("Generate data overview report")
+            pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+            st_profile_report(pr, navbar=True)
+        elif file_extension in [".xls", ".xlsx"]:
+            df_temp = pd.ExcelFile(file_)
+            names_sheet = df_temp.sheet_names
+            n_sheets = len(names_sheet)
+            
+            # for a file with one sheet only
+            if n_sheets == 1:
+                rows_skipped_top = st.number_input("Skip top rows", step=1)
+                df = pd.read_excel(file_, skiprows=range(rows_skipped_top))
+                id_range = len(df.index)
+                gen_pr_btn = st.button("Generate data overview report")
 
-            if gen_pr_btn:
-                pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-                st_profile_report(pr, navbar=True)
-        elif n_sheets > 1:
-            name_of_sheet = st.selectbox("Pick sheet number", options=names_sheet)
-            rows_skipped_top = st.number_input("Skip top rows", step=1)
-            df = pd.read_excel(file_, sheet_name=name_of_sheet, skiprows=range(rows_skipped_top))
-            id_range = len(df.index)
-            gen_pr_btn = st.button("Generate data overview report")
+                if gen_pr_btn:
+                    pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+                    st_profile_report(pr, navbar=True)
+            elif n_sheets > 1:
+                name_of_sheet = st.selectbox("Pick sheet number", options=names_sheet)
+                rows_skipped_top = st.number_input("Skip top rows", step=1)
+                df = pd.read_excel(file_, sheet_name=name_of_sheet, skiprows=range(rows_skipped_top))
+                id_range = len(df.index)
+                gen_pr_btn = st.button("Generate data overview report")
 
-            if gen_pr_btn:
-                pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-                st_profile_report(pr, navbar=True)
-                # to do:
-                # refactor code to use function for this code and just call it
-    # to do:
-    # put disclaimer on cleaning data
-except Exception as e:
-    print(e)
-
-# to do:
-# for excel files provide a way to skip rows and pick files
-# provide a way to compare between files for consistency and accuracy
+                if gen_pr_btn:
+                    pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+                    st_profile_report(pr, navbar=True)
+        # to do:
+        # put disclaimer on cleaning data
+    except Exception:
+        print('Upload CSV or Excel file')
 
 # evaluation metrics from dimensions
 # 1. Uniqueness
 # check row duplication
 def row_uniqueness_score():
     try:
-        # df = read_file(file_name)
         # rows duplicates
         dups = df.duplicated().sum()
         un_score = 100 - ((dups / id_range) * 100)
@@ -70,7 +72,6 @@ def row_uniqueness_score():
 # checks duplicated columns
 def col_uniq_score():
     try:
-        # df = read_file(file_name)
         cols = [col for col in df.columns]
         col_dups = [col for col in cols if cols.count(col) > 1]
         col_dups_score = 100 - (len(col_dups) / len(df.columns) * 100)
@@ -84,7 +85,6 @@ def col_uniq_score():
 # computes the number of complete rows
 def completeness_row():
     try:
-        # df = read_file(file_name)
         count = 0
             # iterate over each row to see whether it contains a null
             # if true (means there is a nan value) save 0 to a list, 1 otherwise
@@ -101,7 +101,6 @@ def completeness_row():
 # compute total cols completeness
 def completeness_cols():
     try:
-        # df = read_file(file_name)
         null_list = [col for col in df.columns if df[col].isnull().sum() == 0]
         score = 100 * len(null_list) / len(df.columns)
         description = "Column completeness score"
@@ -194,10 +193,10 @@ def check_class_violation():
                     classes_l.append(types_l)
         if len(classes_l) > 0:
             description = "Data class violations statistics"
-            # return "Data class violations statistics:\n{}".format(classes_l)
+            # for i in classes_l:
+            #     print(i)
             return description, classes_l
         else:
-            # return "Data class violation: 0" # format this to be metric per class
             description = "Data class violation"
             return description, default_score
     except Exception:
@@ -275,29 +274,19 @@ data = {
     'Score': scores_str_list
 }
 
-# # print(score_1)
+# create dataset of scores
 df_scores = pd.DataFrame(data)
-
-# if file_ is not None:
-#     styled_df = df_scores.style.hide()
-#     st.write(styled_df.to_html(), unsafe_allow_html=True)
 
 # to do:
 # persist overview page
-# use navbar with st.sidebar and
-# change the names of the pages
-# rename streamlit app to Home
-# do first char uppercase on other page names
 
-# define session state
-# "st.session_state object", st.session_state
+# call menu function
+set_menu()
 
-# check variable not in session_state
+# check variable not in session_state and added them
 if file_ is not None:
     pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
-    # overview = st_profile_report(pr, navbar=True)
     st.session_state['df_scores'] = df_scores
-    # st.session_state['dt_overview'] = overview
     st.session_state['pr'] = pr
-    # st.write(st.session_state['dt_overview'])
     st.session_state['file_name'] = file_.name
+    st.session_state['df'] = df
