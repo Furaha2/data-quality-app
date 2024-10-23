@@ -10,6 +10,3 @@ set_menu()
 
 if 'pr' in st.session_state:
     st_profile_report(st.session_state['pr'], navbar=True)
-    df = st.session_state['df']
-    st.write('Dataframe top 5 rows (Hover on table to see expand icon)')
-    st.write(df.head())
