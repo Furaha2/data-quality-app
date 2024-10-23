@@ -23,7 +23,7 @@ if file_ is not None:
         if file_extension == '.csv':
             df = pd.read_csv(file_)
             id_range = len(df.index)
-            pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+            pr = ProfileReport(df, explorative=True)
             st_profile_report(pr, navbar=True)
         elif file_extension in [".xls", ".xlsx"]:
             df_temp = pd.ExcelFile(file_)
