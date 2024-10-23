@@ -285,7 +285,7 @@ set_menu()
 
 # check variable not in session_state and added them
 if file_ is not None:
-    pr = ProfileReport(df, minimal=True, orange_mode=True, explorative=True)
+    pr = ProfileReport(df, minimal=True, orange_mode=False, explorative=True)
     st.session_state['df_scores'] = df_scores
     st.session_state['pr'] = pr
     st.session_state['file_name'] = file_.name
